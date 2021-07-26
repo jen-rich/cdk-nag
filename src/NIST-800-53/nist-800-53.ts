@@ -7,6 +7,9 @@ import { Annotations, CfnResource, IConstruct } from '@aws-cdk/core';
 import { NagPack } from '../common';
 
 import {
+  nist80053DynamoDBPITREnabled
+} from './rules/DynamoDB';
+import {
   nist80053EC2CheckDetailedMonitoring,
   nist80053EC2CheckInsideVPC,
   nist80053EC2CheckNoPublicIPs,
@@ -31,9 +34,29 @@ export class NIST80053Checks extends NagPack {
     if (node instanceof CfnResource) {
       // Get ignores metadata if it exists
       const ignores = node.getMetadata('cdk_nag')?.rules_to_suppress;
+      this.checkDynamoDB(node, ignores);
       this.checkEC2(node, ignores);
-      this.checkIAM(node, ignores);
       this.checkEFS(node, ignores);
+      this.checkIAM(node, ignores);
+    }
+  }
+  
+  /**
+   * Check DynamoDB Resources
+   * @param node the IConstruct to evaluate
+   * @param ignores list of ignores for the resource
+   */
+   private checkDynamoDB(node: CfnResource, ignores: any): void {
+    if (
+      !this.ignoreRule(ignores, 'NIST.800.53-DynamoDBPITREnabled') &&
+      !nist80053DynamoDBPITREnabled(node)
+    ) {
+      const ruleId = 'NIST.800.53-DynamoDBPITREnabled';
+      const info = 'DynamoDB does not have point-in-time recovery enabled - (Control IDs: CP-9(b), CP-10, SI-12).';
+      const explanation = 'Point-in-time recovery maintains continuous backups of your table for the last 35 days.';
+      Annotations.of(node).addError(
+        this.createMessage(ruleId, info, explanation),
+      );
     }
   }
 
@@ -107,7 +130,6 @@ export class NIST80053Checks extends NagPack {
       );
     }
   }
-
   /**
    * Check IAM Resources
    * @param node the IConstruct to evaluate
