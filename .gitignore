@@ -51,3 +51,5 @@ yarn-error.log*
 !/test
 !/tsconfig.eslint.json
 !/tsconfig.jest.json
+src/NIST-800-53/rules/efs/index.ts
+src/NIST-800-53/rules/efs/nist80053EFSEncrypted.ts
